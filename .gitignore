@@ -1,0 +1,24 @@
+# Godot 4+ specific ignores
+.godot/
+*.translation
+
+# Mono-specific files
+.mono/
+data_*/
+mono_crash.*.json
+
+# Local configurations / secrets
+*.cfg
+!export_presets.cfg
+*.env
+user/
+*.log
+*.tmp
+
+# Export / Build outputs (binaries are uploaded to GitHub Releases)
+build/
+bin/
+dist/
+*.exe
+*.pck
+*.zip

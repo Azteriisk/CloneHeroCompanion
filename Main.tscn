@@ -1,0 +1,495 @@
+[gd_scene format=3 uid="uid://c6f3q18n0syl"]
+
+[ext_resource type="Script" uid="uid://cbhaqwg7kuq1c" path="res://Main.gd" id="1_4b8f0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 16.0
+bg_color = Color(0.08, 0.08, 0.1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tab"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_spotify"]
+bg_color = Color(0.113725, 0.72549, 0.329412, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_color = Color(0.113725, 0.72549, 0.329412, 0.25)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_spotify_hover"]
+bg_color = Color(0.141176, 0.827451, 0.380392, 1)
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+shadow_color = Color(0.141176, 0.827451, 0.380392, 0.4)
+shadow_size = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.1, 0.1, 0.13, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.25, 0.35, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="Main" type="Control" unique_id=666384164]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_4b8f0")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1783387177]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.04, 0.05, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=738986023]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="Panel" type="PanelContainer" parent="MarginContainer" unique_id=845739957]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Panel" unique_id=786573622]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderMargin" type="MarginContainer" parent="MarginContainer/Panel/VBoxContainer" unique_id=1704857340]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 8
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/Panel/VBoxContainer/HeaderMargin" unique_id=1041196139]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TitleBlock" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/HeaderMargin/Header" unique_id=1096083261]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="MarginContainer/Panel/VBoxContainer/HeaderMargin/Header/TitleBlock" unique_id=398691028]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.97, 1)
+theme_override_font_sizes/font_size = 38
+text = "Azterisk Hero Companion"
+
+[node name="StatusLabel" type="Label" parent="MarginContainer/Panel/VBoxContainer/HeaderMargin/Header/TitleBlock" unique_id=685676379]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.45, 0.72, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Status: Waiting..."
+
+[node name="SettingsBtn" type="Button" parent="MarginContainer/Panel/VBoxContainer/HeaderMargin/Header" unique_id=429431969]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 26
+text = "⚙"
+
+[node name="TabNavMargin" type="MarginContainer" parent="MarginContainer/Panel/VBoxContainer" unique_id=1368705071]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 4
+
+[node name="TabBarPanel" type="PanelContainer" parent="MarginContainer/Panel/VBoxContainer/TabNavMargin" unique_id=17789111]
+layout_mode = 2
+
+[node name="TabButtons" type="HBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabNavMargin/TabBarPanel" unique_id=1674533977]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TabDiscover" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabNavMargin/TabBarPanel/TabButtons" unique_id=1408904086]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "🔍  Discover"
+
+[node name="TabTopTracks" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabNavMargin/TabBarPanel/TabButtons" unique_id=2081132897]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "🔥  Top Tracks"
+
+[node name="TabLibrary" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabNavMargin/TabBarPanel/TabButtons" unique_id=1521999361]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "📚  My Library"
+
+[node name="TabImport" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabNavMargin/TabBarPanel/TabButtons" unique_id=2101737649]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "📥  Import"
+
+[node name="TabContainer" type="TabContainer" parent="MarginContainer/Panel/VBoxContainer" unique_id=933474755]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_tab")
+current_tab = 2
+tabs_visible = false
+
+[node name="Discover" type="MarginContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer" unique_id=705916193]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+metadata/_tab_index = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Discover" unique_id=2140181667]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Discover/VBoxContainer" unique_id=596436752]
+layout_mode = 2
+
+[node name="DiscoverStatusLabel" type="Label" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Discover/VBoxContainer/HBoxContainer" unique_id=1329708472]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.7, 0.75, 0.88, 1)
+text = "Discovering tracks based on your artists..."
+vertical_alignment = 1
+
+[node name="DiscoverRefreshBtn" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Discover/VBoxContainer/HBoxContainer" unique_id=1283011526]
+custom_minimum_size = Vector2(210, 42)
+layout_mode = 2
+text = "🎲  Discover More"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Discover/VBoxContainer" unique_id=1961481692]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+
+[node name="ResultList" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Discover/VBoxContainer/ScrollContainer" unique_id=709843634]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="Top Tracks" type="MarginContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer" unique_id=449764424]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+metadata/_tab_index = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks" unique_id=989594274]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderBar" type="HBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer" unique_id=1793479398]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="FilterClassicsBtn" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer/HeaderBar" unique_id=506288803]
+custom_minimum_size = Vector2(195, 42)
+layout_mode = 2
+text = "🔥  Community Classics"
+
+[node name="FilterLatestBtn" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer/HeaderBar" unique_id=1493616934]
+custom_minimum_size = Vector2(175, 42)
+layout_mode = 2
+text = "✨  Latest Releases"
+
+[node name="FilterCscBtn" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer/HeaderBar" unique_id=741715621]
+custom_minimum_size = Vector2(185, 42)
+layout_mode = 2
+text = "🏆  CSC & Official"
+
+[node name="TopTracksSearchField" type="LineEdit" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer/HeaderBar" unique_id=592236172]
+custom_minimum_size = Vector2(180, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Enchor (song, artist, charter)..."
+
+[node name="TopTracksSearchBtn" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer/HeaderBar" unique_id=702255241]
+custom_minimum_size = Vector2(95, 42)
+layout_mode = 2
+text = "🔍  Search"
+
+[node name="TopTracksRefreshBtn" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer/HeaderBar" unique_id=487905938]
+custom_minimum_size = Vector2(105, 42)
+layout_mode = 2
+text = "🔄  Refresh"
+
+[node name="TopTracksStatusLabel" type="Label" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer" unique_id=1502034273]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.88, 1)
+text = "Browsing Community Classics — iconic rhythm game anthems"
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer" unique_id=903990304]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+
+[node name="TopTracksList" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Top Tracks/VBoxContainer/ScrollContainer" unique_id=602130369]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="My Library" type="MarginContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer" unique_id=526904501]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+metadata/_tab_index = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/My Library" unique_id=1378933278]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/My Library/VBoxContainer" unique_id=1782176610]
+layout_mode = 2
+alignment = 2
+
+[node name="DeleteButton" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/My Library/VBoxContainer/HBoxContainer" unique_id=599291703]
+custom_minimum_size = Vector2(160, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
+text = "Delete Selected"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/My Library/VBoxContainer" unique_id=327686275]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+
+[node name="LibraryList" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/My Library/VBoxContainer/ScrollContainer" unique_id=941918339]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="Import" type="MarginContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer" unique_id=1499788500]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+metadata/_tab_index = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Import" unique_id=1800086226]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="SpotifyButton" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Import/VBoxContainer" unique_id=700109730]
+custom_minimum_size = Vector2(340, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("StyleBoxFlat_spotify")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_spotify")
+theme_override_styles/hover = SubResource("StyleBoxFlat_spotify_hover")
+text = "Log In With Spotify"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Import/VBoxContainer" unique_id=1034472988]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PlaylistList" type="VBoxContainer" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Import/VBoxContainer/ScrollContainer" unique_id=1297112436]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="LogoutButton" type="Button" parent="MarginContainer/Panel/VBoxContainer/TabContainer/Import/VBoxContainer" unique_id=1187297583]
+visible = false
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.7, 0.7, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "Log Out"
+
+[node name="PickerModal" type="ColorRect" parent="." unique_id=1451564572]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="CenterContainer" type="CenterContainer" parent="PickerModal" unique_id=1566941932]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ModalPanel" type="PanelContainer" parent="PickerModal/CenterContainer" unique_id=2107686254]
+custom_minimum_size = Vector2(820, 560)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="MarginContainer" type="MarginContainer" parent="PickerModal/CenterContainer/ModalPanel" unique_id=1091494898]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PickerModal/CenterContainer/ModalPanel/MarginContainer" unique_id=820408426]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ModalTitle" type="Label" parent="PickerModal/CenterContainer/ModalPanel/MarginContainer/VBoxContainer" unique_id=364542375]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Multiple Charts Found"
+
+[node name="ModalSubtitle" type="Label" parent="PickerModal/CenterContainer/ModalPanel/MarginContainer/VBoxContainer" unique_id=1839053327]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.65, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Select your preferred chart version to link:"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PickerModal/CenterContainer/ModalPanel/MarginContainer/VBoxContainer" unique_id=1885681888]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ModalOptionList" type="VBoxContainer" parent="PickerModal/CenterContainer/ModalPanel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=2069646453]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="ModalCancelBtn" type="Button" parent="PickerModal/CenterContainer/ModalPanel/MarginContainer/VBoxContainer" unique_id=115182309]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Cancel"
+
+[node name="SettingsModal" type="ColorRect" parent="." unique_id=377237294]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="CenterContainer" type="CenterContainer" parent="SettingsModal" unique_id=1588884900]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SettingsPanel" type="PanelContainer" parent="SettingsModal/CenterContainer" unique_id=1676733771]
+custom_minimum_size = Vector2(720, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="MarginContainer" type="MarginContainer" parent="SettingsModal/CenterContainer/SettingsPanel" unique_id=2142710707]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 28
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer" unique_id=872755105]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="SettingsTitle" type="Label" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=831076359]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "⚙  Settings"
+
+[node name="SectionDirLabel" type="Label" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=1792575560]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.75, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "SONGS DIRECTORIES"
+
+[node name="DirsContainer" type="VBoxContainer" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=514854534]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AddDirRow" type="HBoxContainer" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=1804101139]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AddDirField" type="LineEdit" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer/AddDirRow" unique_id=1152246327]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Paste or type a new songs folder path..."
+
+[node name="AddDirBtn" type="Button" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer/AddDirRow" unique_id=101446652]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "+ Add"
+
+[node name="SectionGameLabel" type="Label" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=49978535]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.75, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "SYNC TARGETS"
+
+[node name="GameTargetRow" type="HBoxContainer" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=1418008675]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TargetCloneHero" type="CheckButton" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer/GameTargetRow" unique_id=975731198]
+layout_mode = 2
+button_pressed = true
+text = "Clone Hero"
+
+[node name="TargetYARG" type="CheckButton" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer/GameTargetRow" unique_id=2123121422]
+layout_mode = 2
+text = "YARG"
+
+[node name="SettingsCloseBtn" type="Button" parent="SettingsModal/CenterContainer/SettingsPanel/MarginContainer/VBoxContainer" unique_id=1733122937]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Done"

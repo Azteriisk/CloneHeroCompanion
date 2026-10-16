@@ -1186,6 +1186,8 @@ func _get_yarc_setlists_path() -> String:
 		candidates.append(local_app_data.replace("\\", "/") + "/YARC/Setlists")
 	candidates.append(home + "/.local/share/YARC/Setlists")
 	candidates.append(home + "/.config/YARC/Setlists")
+	candidates.append("/run/media/azterisk/Games/YARC/data/Setlists")
+	candidates.append("/run/media/azterisk/Games/YARC/Setlists")
 	for p in candidates:
 		if DirAccess.dir_exists_absolute(p):
 			return p
@@ -1202,11 +1204,30 @@ func _find_song_directories():
 		home + "/Clone Hero/Songs",
 		home + "/YARG/Songs",
 		home + "/Games/YARG/Songs",
+		"/run/media/azterisk/Games/YARG/Songs",
+		"/run/media/azterisk/Games/Clone Hero/Songs",
 		home + "/.config/unity3d/YARC/YARG/Songs",
 		home + "/.local/share/YARG/Songs",
 		home + "/.config/unity3d/srylain Inc_/Clone Hero/Songs",
 		docs + "/Clone Hero PTB/Songs"
 	]
+
+	# Dynamically scan mounted media drives for rhythm game folders
+	var user_name = OS.get_environment("USER")
+	var media_roots = ["/run/media/" + user_name, "/media/" + user_name, "/mnt"]
+	for m_root in media_roots:
+		if user_name != "" and DirAccess.dir_exists_absolute(m_root):
+			var m_dir = DirAccess.open(m_root)
+			if m_dir:
+				m_dir.list_dir_begin()
+				var d_name = m_dir.get_next()
+				while d_name != "":
+					if not d_name.begins_with("."):
+						var drive_path = m_root + "/" + d_name
+						test_paths.append(drive_path + "/YARG/Songs")
+						test_paths.append(drive_path + "/Clone Hero/Songs")
+						test_paths.append(drive_path + "/Songs")
+					d_name = m_dir.get_next()
 
 	# Auto-detect YARG / YARC installations & setlists
 	var yarc_setlists = _get_yarc_setlists_path()

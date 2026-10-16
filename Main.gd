@@ -1150,35 +1150,80 @@ func _render_top_tracks_ui():
 		
 		top_tracks_container.add_child(card)
 
+func _get_home_dir() -> String:
+	var home = OS.get_environment("USERPROFILE")
+	if home == "":
+		home = OS.get_environment("HOME")
+	if home == "":
+		home = OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS).get_base_dir()
+	return home.replace("\\", "/")
+
+func _get_yarg_settings_path() -> String:
+	var home = _get_home_dir()
+	var candidates = [
+		home + "/.config/unity3d/YARC/YARG/release/settings.json",
+		home + "/.config/unity3d/YARC/YARG/settings.json",
+		home + "/AppData/LocalLow/YARC/YARG/release/settings.json",
+		home + "/AppData/LocalLow/YARC/YARG/settings.json",
+		home + "/Library/Application Support/unity.YARC.YARG/release/settings.json",
+		home + "/.var/app/net.yarg.YARG/config/unity3d/YARC/YARG/release/settings.json"
+	]
+	for p in candidates:
+		if FileAccess.file_exists(p):
+			return p
+	if OS.has_feature("windows"):
+		return home + "/AppData/LocalLow/YARC/YARG/release/settings.json"
+	elif OS.has_feature("macos"):
+		return home + "/Library/Application Support/unity.YARC.YARG/release/settings.json"
+	else:
+		return home + "/.config/unity3d/YARC/YARG/release/settings.json"
+
+func _get_yarc_setlists_path() -> String:
+	var local_app_data = OS.get_environment("LOCALAPPDATA")
+	var home = _get_home_dir()
+	var candidates = []
+	if local_app_data != "":
+		candidates.append(local_app_data.replace("\\", "/") + "/YARC/Setlists")
+	candidates.append(home + "/.local/share/YARC/Setlists")
+	candidates.append(home + "/.config/YARC/Setlists")
+	for p in candidates:
+		if DirAccess.dir_exists_absolute(p):
+			return p
+	return ""
+
 func _find_song_directories():
 	var docs = OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS)
-	var user_profile = OS.get_environment("USERPROFILE")
-	var local_app_data = OS.get_environment("LOCALAPPDATA")
+	var home = _get_home_dir()
 
 	var test_paths = [
 		docs + "/Clone Hero/Songs",
 		docs + "/YARG/Songs",
-		user_profile + "/.clonehero/Songs",
+		home + "/.clonehero/Songs",
+		home + "/Clone Hero/Songs",
+		home + "/YARG/Songs",
+		home + "/Games/YARG/Songs",
+		home + "/.config/unity3d/YARC/YARG/Songs",
+		home + "/.local/share/YARG/Songs",
+		home + "/.config/unity3d/srylain Inc_/Clone Hero/Songs",
 		docs + "/Clone Hero PTB/Songs"
 	]
 
 	# Auto-detect YARG / YARC installations & setlists
-	if local_app_data != "":
-		var yarc_setlists = local_app_data.replace("\\", "/") + "/YARC/Setlists"
-		if DirAccess.dir_exists_absolute(yarc_setlists):
-			var s_dir = DirAccess.open(yarc_setlists)
-			if s_dir:
-				s_dir.list_dir_begin()
-				var entry = s_dir.get_next()
-				while entry != "":
-					if not entry.begins_with("."):
-						var inst_dir = yarc_setlists + "/" + entry + "/installation"
-						if DirAccess.dir_exists_absolute(inst_dir):
-							test_paths.append(inst_dir)
-					entry = s_dir.get_next()
+	var yarc_setlists = _get_yarc_setlists_path()
+	if yarc_setlists != "" and DirAccess.dir_exists_absolute(yarc_setlists):
+		var s_dir = DirAccess.open(yarc_setlists)
+		if s_dir:
+			s_dir.list_dir_begin()
+			var entry = s_dir.get_next()
+			while entry != "":
+				if not entry.begins_with("."):
+					var inst_dir = yarc_setlists + "/" + entry + "/installation"
+					if DirAccess.dir_exists_absolute(inst_dir):
+						test_paths.append(inst_dir)
+				entry = s_dir.get_next()
 
 	# Read any existing SongFolders configured in YARG
-	var yarg_cfg_path = user_profile.replace("\\", "/") + "/AppData/LocalLow/YARC/YARG/release/settings.json"
+	var yarg_cfg_path = _get_yarg_settings_path()
 	if FileAccess.file_exists(yarg_cfg_path):
 		var y_fa = FileAccess.open(yarg_cfg_path, FileAccess.READ)
 		if y_fa:
@@ -1208,8 +1253,7 @@ func _find_song_directories():
 		status_label.text = "Could not automatically find Songs folder. Use Settings (cog) to set a directory."
 
 func _sync_with_yarg():
-	var user_profile = OS.get_environment("USERPROFILE")
-	var yarg_cfg_path = user_profile.replace("\\", "/") + "/AppData/LocalLow/YARC/YARG/release/settings.json"
+	var yarg_cfg_path = _get_yarg_settings_path()
 	if not FileAccess.file_exists(yarg_cfg_path):
 		return
 	var y_fa = FileAccess.open(yarg_cfg_path, FileAccess.READ)
@@ -1220,17 +1264,19 @@ func _sync_with_yarg():
 	if not (y_json is Dictionary):
 		return
 	var sf_list: Array = y_json.get("SongFolders", [])
+	var is_win = OS.has_feature("windows")
 	var changed = false
 	for d in song_directories:
 		if DirAccess.dir_exists_absolute(d):
-			var win_path = d.replace("/", "\\")
+			var formatted_path = d.replace("/", "\\") if is_win else d.replace("\\", "/")
+			var norm_d = d.replace("\\", "/").trim_suffix("/").to_lower()
 			var already_has = false
 			for existing in sf_list:
-				if str(existing).replace("/", "\\").to_lower() == win_path.to_lower():
+				if str(existing).replace("\\", "/").trim_suffix("/").to_lower() == norm_d:
 					already_has = true
 					break
 			if not already_has:
-				sf_list.append(win_path)
+				sf_list.append(formatted_path)
 				changed = true
 	if changed:
 		y_json["SongFolders"] = sf_list

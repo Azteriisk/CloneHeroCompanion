@@ -2442,12 +2442,157 @@ func _get_song_signature(artist: String, title: String) -> String:
 func _clean_song_title(title: String) -> String:
 	var clean = title
 	var re1 = RegEx.new()
-	re1.compile("(?i)\\s*\\((feat\\.|ft\\.|with|remaster|live|from).*?\\)")
+	re1.compile("(?i)\\s*[\\(\\[](feat\\.|ft\\.|with|remaster|live|from|original|deluxe|anniversary|single|radio|bonus|\\d{4}\\s*remaster).*?[\\)\\]]")
 	clean = re1.sub(clean, "", true)
 	var re2 = RegEx.new()
-	re2.compile("(?i)\\s*-\\s*(remaster|live|single|radio edit|mono|stereo|album version|from).*")
+	re2.compile("(?i)\\s*-\\s*(\\d{4}\\s*remaster|remaster|live|single|radio edit|mono|stereo|album version|original|from|bonus).*")
 	clean = re2.sub(clean, "", true)
-	return clean.strip_edges()
+	clean = clean.strip_edges()
+	clean = clean.trim_suffix("-").trim_suffix("/").strip_edges()
+	return clean
+
+func _levenshtein_distance(s1: String, s2: String) -> int:
+	var len1 = s1.length()
+	var len2 = s2.length()
+	if len1 == 0: return len2
+	if len2 == 0: return len1
+	
+	var prev_row = PackedInt32Array()
+	prev_row.resize(len2 + 1)
+	for j in range(len2 + 1):
+		prev_row[j] = j
+		
+	var curr_row = PackedInt32Array()
+	curr_row.resize(len2 + 1)
+	
+	for i in range(len1):
+		curr_row[0] = i + 1
+		var c1 = s1[i]
+		for j in range(len2):
+			var c2 = s2[j]
+			var cost = 0 if c1 == c2 else 1
+			var del_cost = prev_row[j + 1] + 1
+			var ins_cost = curr_row[j] + 1
+			var sub_cost = prev_row[j] + cost
+			var m = del_cost if del_cost < ins_cost else ins_cost
+			curr_row[j + 1] = m if m < sub_cost else sub_cost
+			
+		for j in range(len2 + 1):
+			prev_row[j] = curr_row[j]
+			
+	return prev_row[len2]
+
+func _string_similarity(s1: String, s2: String) -> float:
+	var m = max(s1.length(), s2.length())
+	if m == 0: return 1.0
+	var dist = _levenshtein_distance(s1, s2)
+	return max(0.0, 1.0 - (float(dist) / float(m)))
+
+func _calculate_artist_similarity(chart_artist: String, spotify_artist_names: Array) -> float:
+	var ca_clean = _clean_text_for_matching(chart_artist)
+	if ca_clean.is_empty():
+		return 0.0
+		
+	var best_score = 0.0
+	var ca_no_the = ca_clean
+	if ca_no_the.begins_with("the") and ca_no_the.length() > 3:
+		ca_no_the = ca_no_the.substr(3)
+		
+	if spotify_artist_names.size() > 1:
+		var joined = ""
+		for a in spotify_artist_names:
+			joined += str(a) + " and "
+		var joined_clean = _clean_text_for_matching(joined)
+		if ca_clean == joined_clean:
+			return 1.0
+		var sim_joined = _string_similarity(ca_clean, joined_clean)
+		if sim_joined > best_score:
+			best_score = sim_joined
+			
+	for a in spotify_artist_names:
+		var sa = str(a).strip_edges()
+		if sa.is_empty():
+			continue
+		var sa_clean = _clean_text_for_matching(sa)
+		if sa_clean.is_empty():
+			continue
+			
+		var sa_no_the = sa_clean
+		if sa_no_the.begins_with("the") and sa_no_the.length() > 3:
+			sa_no_the = sa_no_the.substr(3)
+			
+		if ca_clean == sa_clean:
+			return 1.0
+		if ca_no_the == sa_no_the:
+			return 0.98
+			
+		if sa_clean.length() >= 3 and ca_clean.length() >= 3:
+			if ca_clean.begins_with(sa_clean) or ca_clean.ends_with(sa_clean) or ca_clean.contains("and" + sa_clean) or ca_clean.contains(sa_clean + "and"):
+				var score = 0.95
+				if score > best_score:
+					best_score = score
+					
+		var sim = _string_similarity(ca_clean, sa_clean)
+		var sim_no_the = _string_similarity(ca_no_the, sa_no_the)
+		var max_sim = max(sim, sim_no_the)
+		if max_sim > best_score:
+			best_score = max_sim
+			
+	return best_score
+
+func _calculate_title_similarity(chart_name: String, target_title: String, clean_target_title: String) -> float:
+	var cn_clean = _clean_text_for_matching(chart_name)
+	var cn_cleaned_title = _clean_text_for_matching(_clean_song_title(chart_name))
+	var tt_clean = _clean_text_for_matching(target_title)
+	var ctt_clean = _clean_text_for_matching(clean_target_title)
+	
+	if cn_clean.is_empty() or (tt_clean.is_empty() and ctt_clean.is_empty()):
+		return 0.0
+		
+	if cn_clean == tt_clean or cn_clean == ctt_clean or cn_cleaned_title == ctt_clean or cn_cleaned_title == tt_clean:
+		return 1.0
+		
+	var sim1 = _string_similarity(cn_cleaned_title, ctt_clean)
+	var sim2 = _string_similarity(cn_clean, tt_clean)
+	var sim3 = _string_similarity(cn_clean, ctt_clean)
+	var sim4 = _string_similarity(cn_cleaned_title, tt_clean)
+	var best_score = max(sim1, max(sim2, max(sim3, sim4)))
+	
+	if ctt_clean.length() >= 4:
+		if cn_clean.begins_with(ctt_clean):
+			var ratio = float(ctt_clean.length()) / float(cn_clean.length())
+			if ratio >= 0.60:
+				best_score = max(best_score, 0.90)
+				
+	return best_score
+
+func _evaluate_chart_match(target_title: String, clean_title: String, artist_names: Array, track_duration_ms: int, chart: Dictionary) -> Dictionary:
+	var chart_artist = str(chart.get("artist", "")).strip_edges()
+	var chart_name = str(chart.get("name", "")).strip_edges()
+	var chart_len = int(chart.get("song_length", 0))
+	
+	var a_score = _calculate_artist_similarity(chart_artist, artist_names)
+	var t_score = _calculate_title_similarity(chart_name, target_title, clean_title)
+	
+	var is_match = (a_score >= 0.80 and t_score >= 0.75)
+	
+	var dur_confidence = 0.0
+	if track_duration_ms > 0 and chart_len > 0:
+		var delta_sec = abs(track_duration_ms - chart_len) / 1000.0
+		if delta_sec <= 8.0:
+			dur_confidence = 0.05
+		elif delta_sec > 75.0:
+			dur_confidence = -0.10
+			
+	var confidence = (a_score * 0.5) + (t_score * 0.5) + dur_confidence
+	
+	return {
+		"is_match": is_match,
+		"artist_score": a_score,
+		"title_score": t_score,
+		"confidence": confidence,
+		"chart": chart
+	}
 
 func _find_installed_song(artist_names: Array, track_title: String) -> String:
 	if installed_songs_map.is_empty():
@@ -2901,7 +3046,7 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 				artist_names.append(track["artists"].strip_edges())
 				
 		var artist_str = ", ".join(artist_names)
-
+		var track_duration_ms = int(track.get("duration_ms", 0))
 		
 		# --- SONG ROW (Status Square + Song Button) ---
 		var row = HBoxContainer.new()
@@ -3011,7 +3156,9 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 			"matches": [],
 			"chosen_chart": null,
 			"installed_folder": installed_folder,
-			"is_installed": is_installed
+			"is_installed": is_installed,
+			"track_duration_ms": track_duration_ms,
+			"artist_names": artist_names
 		}
 		
 		var do_enchor_search = func(open_modal_on_multi: bool):
@@ -3030,9 +3177,30 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 			status_label.text = "Checking Enchor for '%s'..." % track_title
 			
 			var clean_title = _clean_song_title(track_title)
-			var queries_to_try = [track_title + " " + artist_str]
-			if clean_title != track_title and clean_title.length() > 0:
-				queries_to_try.append(clean_title + " " + artist_str)
+			var primary_artist = artist_names[0] if not artist_names.is_empty() else artist_str
+			
+			var queries_to_try = []
+			# Tier 1: Cleaned Title + Primary Artist (highest yield and accuracy on Enchor)
+			var q1 = (clean_title if clean_title != "" else track_title) + " " + primary_artist
+			queries_to_try.append(q1.strip_edges())
+			
+			# Tier 2: If primary artist begins with "The ", also try without "The "
+			if primary_artist.to_lower().begins_with("the ") and primary_artist.length() > 4:
+				var q2 = (clean_title if clean_title != "" else track_title) + " " + primary_artist.substr(4).strip_edges()
+				if not queries_to_try.has(q2):
+					queries_to_try.append(q2)
+					
+			# Tier 3: If multiple artists, try clean title + joined artists
+			if artist_names.size() > 1:
+				var q3 = (clean_title if clean_title != "" else track_title) + " " + artist_str
+				if not queries_to_try.has(q3):
+					queries_to_try.append(q3)
+					
+			# Tier 4: Original track title + primary artist (if different from clean title)
+			if clean_title != track_title and track_title != "":
+				var q4 = track_title + " " + primary_artist
+				if not queries_to_try.has(q4):
+					queries_to_try.append(q4)
 			
 			var found_charts = []
 			var search_successful = false
@@ -3072,8 +3240,17 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 						# Other network error
 						break
 				
+				# If we found charts, check if at least one matches our target artist & title
 				if not found_charts.is_empty():
-					break
+					var has_valid = false
+					for c in found_charts:
+						if c is Dictionary:
+							var ev = _evaluate_chart_match(track_title, clean_title, artist_names, track_duration_ms, c)
+							if ev["is_match"]:
+								has_valid = true
+								break
+					if has_valid:
+						break
 			
 			if row_state["status"] != "LOADING":
 				return
@@ -3092,20 +3269,59 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 				status_label.text = "Network error checking '%s'. Click to retry." % track_title
 				return
 				
-			row_state["matches"] = found_charts
+			# Evaluate and categorize all candidate charts using System 1 decision engine
+			var valid_matches = []
+			var other_results = []
 			
-			# Cross-reference Enchor search matches against local library
-			if not row_state["is_installed"] and not found_charts.is_empty():
-				for fc in found_charts:
-					if fc is Dictionary:
-						var fc_art = str(fc.get("artist", "")).strip_edges()
-						var fc_name = str(fc.get("name", "")).strip_edges()
-						if fc_art != "" and fc_name != "":
-							var match_inst = _find_installed_song([fc_art], fc_name)
-							if match_inst != "":
-								row_state["is_installed"] = true
-								row_state["installed_folder"] = match_inst
-								break
+			for c in found_charts:
+				if c is Dictionary:
+					var eval_res = _evaluate_chart_match(track_title, clean_title, artist_names, track_duration_ms, c)
+					if eval_res["is_match"]:
+						valid_matches.append(eval_res)
+					else:
+						other_results.append(eval_res)
+						
+			# Sort valid matches: confidence, official release, CSC, ordering
+			valid_matches.sort_custom(func(a, b):
+				var a_c = a["chart"]
+				var b_c = b["chart"]
+				if abs(a["confidence"] - b["confidence"]) > 0.15:
+					return a["confidence"] > b["confidence"]
+				var a_charter = str(a_c.get("charter", "")).to_lower()
+				var b_charter = str(b_c.get("charter", "")).to_lower()
+				var official_list = ["harmonix", "neversoft", "redoctane", "activision", "vicarious visions"]
+				var a_off = official_list.any(func(x): return a_charter.contains(x))
+				var b_off = official_list.any(func(x): return b_charter.contains(x))
+				if a_off != b_off:
+					return a_off
+				var a_pack = str(a_c.get("packName", "")).to_lower()
+				var b_pack = str(b_c.get("packName", "")).to_lower()
+				var a_csc = a_pack.contains("custom songs central")
+				var b_csc = b_pack.contains("custom songs central")
+				if a_csc != b_csc:
+					return a_csc
+				var a_ord = int(a_c.get("ordering", 999))
+				var b_ord = int(b_c.get("ordering", 999))
+				return a_ord < b_ord
+			)
+			
+			var valid_charts = valid_matches.map(func(m): return m["chart"])
+			var other_charts = other_results.map(func(m): return m["chart"])
+			
+			row_state["matches"] = valid_charts if not valid_charts.is_empty() else other_charts
+			row_state["has_verified_matches"] = not valid_charts.is_empty()
+			
+			# Cross-reference verified Enchor search matches against local library
+			if not row_state["is_installed"] and not valid_charts.is_empty():
+				for fc in valid_charts:
+					var fc_art = str(fc.get("artist", "")).strip_edges()
+					var fc_name = str(fc.get("name", "")).strip_edges()
+					if fc_art != "" and fc_name != "":
+						var match_inst = _find_installed_song([fc_art], fc_name)
+						if match_inst != "":
+							row_state["is_installed"] = true
+							row_state["installed_folder"] = match_inst
+							break
 			
 			# If the track is installed, ALWAYS keep it marked as INSTALLED and in library
 			if row_state["is_installed"]:
@@ -3114,7 +3330,7 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 				box.add_theme_stylebox_override("normal", style_installed)
 				song_btn.text = "  %s - %s   [💾 IN LIBRARY]" % [artist_str, track_title]
 				if open_modal_on_multi:
-					_open_preferred_chart_modal(track_title, artist_str, found_charts, func(picked):
+					_open_preferred_chart_modal(track_title, artist_str, row_state["matches"], func(picked):
 						if row_state["chosen_chart"] != null and selected_charts.has(row_state["chosen_chart"]):
 							selected_charts.erase(row_state["chosen_chart"])
 						row_state["chosen_chart"] = picked
@@ -3127,32 +3343,33 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 						song_btn.text = "  %s - %s   [✔ %s]" % [artist_str, track_title, picked_charter] if picked_charter != "" else "  %s - %s   [✔ Selected]" % [artist_str, track_title]
 					)
 				else:
-					status_label.text = "'%s' is in your library (%d charts on Enchor)." % [track_title, found_charts.size()]
+					status_label.text = "'%s' is in your library (%d charts on Enchor)." % [track_title, valid_charts.size()]
 				return
 				
 			# Logic for uninstalled tracks
-			if found_charts.is_empty():
+			if valid_charts.is_empty():
 				row_state["status"] = "NO_MATCH"
 				box.text = "✖"
 				box.add_theme_stylebox_override("normal", style_nomatch)
-				status_label.text = "No charts found on Enchor for '%s'." % track_title
-			elif found_charts.size() == 1:
+				status_label.text = "No charts found on Enchor for '%s' by %s." % [track_title, artist_str]
+			elif valid_charts.size() == 1:
+				var chosen = valid_charts[0]
 				row_state["status"] = "MATCHED"
-				row_state["chosen_chart"] = found_charts[0]
+				row_state["chosen_chart"] = chosen
 				box.text = "✔"
 				box.add_theme_stylebox_override("normal", style_matched)
-				selected_charts.append(found_charts[0])
+				selected_charts.append(chosen)
 				update_add_btn.call()
-				var charter_name = found_charts[0].get("charter", "")
+				var charter_name = chosen.get("charter", "")
 				song_btn.text = "  %s - %s   [✔ %s]" % [artist_str, track_title, charter_name] if charter_name != "" else "  %s - %s   [✔ Selected]" % [artist_str, track_title]
-				status_label.text = "Matched 1 chart for '%s'!" % track_title
+				status_label.text = "Matched chart for '%s'!" % track_title
 			else:
 				row_state["status"] = "MULTIPLE"
 				box.text = "❓"
 				box.add_theme_stylebox_override("normal", style_multiple)
-				status_label.text = "Found %s matches for '%s'." % [found_charts.size(), track_title]
+				status_label.text = "Found %s verified charts for '%s'." % [valid_charts.size(), track_title]
 				if open_modal_on_multi:
-					_open_preferred_chart_modal(track_title, artist_str, found_charts, func(picked):
+					_open_preferred_chart_modal(track_title, artist_str, valid_charts, func(picked):
 						if row_state["chosen_chart"] != null and selected_charts.has(row_state["chosen_chart"]):
 							selected_charts.erase(row_state["chosen_chart"])
 						row_state["chosen_chart"] = picked
@@ -3207,8 +3424,23 @@ func _render_playlist_songs(raw_items: Array, playlist_name: String, scan_all_bt
 					song_btn.text = "  %s - %s   [✔ %s]" % [artist_str, track_title, picked_charter] if picked_charter != "" else "  %s - %s   [✔ Selected]" % [artist_str, track_title]
 				)
 			elif row_state["status"] == "NO_MATCH":
-				# Reset to empty on click
-				reset_to_deselected.call()
+				# If there were other search results (like covers/alternatives), open modal so user can view/select if desired, otherwise reset to empty
+				if not row_state["matches"].is_empty():
+					_open_preferred_chart_modal(track_title, artist_str, row_state["matches"], func(picked):
+						if row_state["chosen_chart"] != null and selected_charts.has(row_state["chosen_chart"]):
+							selected_charts.erase(row_state["chosen_chart"])
+						row_state["chosen_chart"] = picked
+						row_state["status"] = "MATCHED"
+						box.text = "✔"
+						box.add_theme_stylebox_override("normal", style_matched)
+						selected_charts.append(picked)
+						update_add_btn.call()
+						var picked_charter = picked.get("charter", "")
+						var picked_art = picked.get("artist", "")
+						song_btn.text = "  %s - %s   [✔ %s]" % [picked_art if picked_art != "" else artist_str, track_title, picked_charter]
+					)
+				else:
+					reset_to_deselected.call()
 			elif row_state["status"] == "INSTALLED":
 				if not row_state["matches"].is_empty():
 					_open_preferred_chart_modal(track_title, artist_str, row_state["matches"], func(picked):
@@ -3376,13 +3608,26 @@ func _open_preferred_chart_modal(track_title: String, artist_str: String, matche
 		modal_subtitle.text = "You currently have a version in your library (%s). You can select a different version below to download it anyway:" % installed_folder
 	else:
 		modal_title.text = "%s - %s" % [artist_str, track_title]
-		modal_subtitle.text = "Select your preferred chart version to link:"
+		var any_matching = matches.any(func(m): return _calculate_artist_similarity(str(m.get("artist", "")), [artist_str]) >= 0.80)
+		if any_matching:
+			modal_subtitle.text = "Select your preferred chart version to link:"
+		else:
+			modal_subtitle.text = "⚠️ No verified chart found for '%s'. Enchor returned these alternative/cover versions:" % artist_str
 		
 	for child in modal_option_list.get_children():
 		child.queue_free()
 		
-	# Sort matches: Official releases & Custom Songs Central & top ranked at top
+	# Sort matches: matching artists first, then official releases & Custom Songs Central & top ranked at top
 	matches.sort_custom(func(a, b):
+		var a_art = str(a.get("artist", "")).strip_edges()
+		var b_art = str(b.get("artist", "")).strip_edges()
+		var a_art_sim = _calculate_artist_similarity(a_art, [artist_str])
+		var b_art_sim = _calculate_artist_similarity(b_art, [artist_str])
+		var a_matches_art = (a_art_sim >= 0.80)
+		var b_matches_art = (b_art_sim >= 0.80)
+		if a_matches_art != b_matches_art:
+			return a_matches_art
+			
 		var a_c_val = a.get("charter")
 		var a_charter = (a_c_val if a_c_val is String else "").to_lower()
 		var b_c_val = b.get("charter")
@@ -3529,14 +3774,32 @@ func _open_preferred_chart_modal(track_title: String, artist_str: String, matche
 		row1.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row1.add_theme_constant_override("separation", 10)
 		
+		var c_artist = str(chart.get("artist", "Unknown")).strip_edges()
+		var c_name = str(chart.get("name", "Unknown")).strip_edges()
+		var is_diff_artist = (_calculate_artist_similarity(c_artist, [artist_str]) < 0.80)
+		
 		var charter_lbl = Label.new()
-		charter_lbl.text = charter
+		if is_diff_artist:
+			charter_lbl.text = "%s - %s  (Charter: %s)" % [c_artist, c_name, charter]
+			charter_lbl.add_theme_color_override("font_color", Color(1.0, 0.6, 0.6, 1))
+		elif c_name.to_lower() != track_title.to_lower():
+			charter_lbl.text = "%s  (Charter: %s)" % [c_name, charter]
+		else:
+			charter_lbl.text = "Charter: %s" % charter
 		charter_lbl.add_theme_font_override("font", custom_font)
 		charter_lbl.add_theme_font_size_override("font_size", 16)
 		charter_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row1.add_child(charter_lbl)
 		
-		if is_currently_installed:
+		if is_diff_artist:
+			var b = Label.new()
+			b.text = "[⚠️ DIFFERENT ARTIST: %s]" % c_artist
+			b.add_theme_font_override("font", custom_font)
+			b.add_theme_font_size_override("font_size", 13)
+			b.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4, 1))
+			b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row1.add_child(b)
+		elif is_currently_installed:
 			var b = Label.new()
 			b.text = "[💾 CURRENT VERSION]"
 			b.add_theme_font_override("font", custom_font)

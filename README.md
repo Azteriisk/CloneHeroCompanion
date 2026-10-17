@@ -35,7 +35,7 @@
 ### Pre-built Release (Windows & Linux)
 
 1. Head over to the [Latest Release](https://github.com/Azteriisk/CloneHeroCompanion/releases/latest).
-2. Download `AzteriskHero-v1.0-windows.zip` (for Windows) or `AzteriskHero.x86_64` (for Linux).
+2. Download `AzteriskHero-v1.1-windows.zip` (for Windows) or `AzteriskHero.x86_64` (for Linux).
 3. On Linux, mark executable (`chmod +x AzteriskHero.x86_64`) and run.
 4. The companion will automatically detect your Clone Hero and YARG song folders on launch. You can also customize or add directories anytime in the **Settings** tab.
 
